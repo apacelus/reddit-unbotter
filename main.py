@@ -59,13 +59,16 @@ def initialize():
                 file.write(template.read())
     try:
         with open("./config/accounts.txt", "r") as f:
-            accounts_amount = len(f.readline()) - 2
+            accounts_amount = len(f.readlines()) - 2
     except FileNotFoundError:
         logging.warning("accounts.txt not found, creating new")
         print("accounts.txt not found, restoring default")
         with open('./config/accounts.txt', 'w') as file:
             with open("./default_config/accounts.txt", "r") as template:
                 file.write(template.read())
+        with open("./config/accounts.txt", "r") as file:
+            accounts_amount = len(f.readlines()) - 2
+    logging.debug("accounts_amount: " + str(accounts_amount))
     if accounts_amount <= 0:
         logging.error("No accounts found, exiting")
         print('No accounts found! Please fill in at least one account in "accounts.txt"')

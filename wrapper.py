@@ -1,6 +1,5 @@
 import logging
 
-import requests
 from platform import system
 from os import path
 from json import load as jload
@@ -34,7 +33,8 @@ if __name__ == "wrapper":
         "chrome": False,
         "firefox": False,
         "firefox_snap": False,
-        "librewolf": False
+        "librewolf_home": False,
+        "librewolf_var": False
     }
     browser_paths_win = {
         "msedge": r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
@@ -46,8 +46,9 @@ if __name__ == "wrapper":
         "chrome": r"/usr/bin/google-chrome",
         "firefox": r"/usr/bin/firefox",
         "firefox_snap": r"/snap/bin/firefox",
-        "librewolf": path.expanduser(
-            '~') + r"/.local/share/flatpak/app/io.gitlab.librewolf-community/current/active/files/lib/librewolf/librewolf"
+        "librewolf_home": path.expanduser(
+            '~') + r"/.local/share/flatpak/app/io.gitlab.librewolf-community/current/active/files/lib/librewolf/librewolf",
+        "librewolf_var": "/var/lib/flatpak/app/io.gitlab.librewolf-community/current/active/files/lib/librewolf/librewolf"
     }
     try:
         with open('./config/settings.json', 'r') as file:
@@ -57,6 +58,7 @@ if __name__ == "wrapper":
     if not path.isfile(settings_json["browser_path"]):
         logging.info("Browser path not found, checking available browsers")
         if system() == "Windows":
+            logging.info("System is Windows")
             settings_json["os"] = "Windows"
             for browser_path in browser_paths_win:
                 if path.isfile(browser_paths_win[browser_path]):
@@ -75,6 +77,7 @@ if __name__ == "wrapper":
                     logging.info("Invalid userinput")
                     continue
         elif system() == "Linux":
+            logging.info("System is Linux")
             settings_json["os"] = "Linux"
             for browser_path in browser_paths_linux:
                 if path.isfile(browser_paths_linux[browser_path]):
@@ -99,7 +102,7 @@ if __name__ == "wrapper":
         with open("./config/settings.json", 'w') as file:
             jdump(settings_json, file)
         match settings_json["browser"]:
-            case "firefox" | "firefox_snap" | "librewolf":
+            case "firefox" | "firefox_snap" | "librewolf_home" | "librewolf_var":
                 logging.info("Wrapper for browser: " + settings_json["browser"])
                 import selenium_wrapper.firefox as selenium_wrapper
             case "chrome":
@@ -117,7 +120,7 @@ if __name__ == "wrapper":
         logging.info("Browser path verified")
         logging.info("OS: " + settings_json["os"] + ", browser: " + settings_json["browser_path"])
         match settings_json["browser"]:
-            case "firefox" | "firefox_snap" | "librewolf":
+            case "firefox" | "firefox_snap" | "librewolf_home" | "librewolf_var":
                 logging.info("Wrapper for browser: " + settings_json["browser"])
                 import selenium_wrapper.firefox as selenium_wrapper
             case "chrome":

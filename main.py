@@ -2,6 +2,7 @@ import logging
 from hashlib import md5
 from json import load as jload
 from json import dump as jdump
+from os import path, mkdir
 
 
 def init_new_accounts():
@@ -47,12 +48,20 @@ def init_new_accounts():
         new_session_cookie = wrapper.get_session_cookie(string[:string.find(":")], string[string.find(":") + 1:])
 
 
-def initialize():
+if __name__ == "__main__":
+    if not path.isdir("./logs"):
+        logging.info("Creating log directory")
+        mkdir("./logs")
+    logging.basicConfig(filename='./logs/unbotter.log', level=logging.DEBUG,
+                        format='%(asctime)s |%(levelname)s| %(message)s')
+    if not path.isdir("./config"):
+        logging.info("Creating config directory")
+        mkdir("./config")
     try:
         with open('./config/data.json', 'r') as file:
             settings_json = jload(file)
     except FileNotFoundError:
-        logging.warning("data.json not found, creating new")
+        logging.info("data.json not found, creating new")
         print("data.json not found, restoring default")
         with open('./config/data.json', 'w') as file:
             with open("./default_config/data.json", "r") as template:
@@ -61,17 +70,17 @@ def initialize():
         with open("./config/accounts.txt", "r") as f:
             accounts_amount = len(f.readlines()) - 2
     except FileNotFoundError:
-        logging.warning("accounts.txt not found, creating new")
+        logging.info("accounts.txt not found, creating new")
         print("accounts.txt not found, restoring default")
         with open('./config/accounts.txt', 'w') as file:
             with open("./default_config/accounts.txt", "r") as template:
                 file.write(template.read())
         with open("./config/accounts.txt", "r") as file:
-            accounts_amount = len(f.readlines()) - 2
+            accounts_amount = len(file.readlines()) - 2
     logging.debug("accounts_amount: " + str(accounts_amount))
     if accounts_amount <= 0:
-        logging.error("No accounts found, exiting")
-        print('No accounts found! Please fill in at least one account in "accounts.txt"')
+        logging.info("No accounts found, exiting")
+        print('No accounts found! Please fill in at least one account in "/config/accounts.txt"')
         exit(1)
     else:
         # Read the settings.json file
@@ -79,7 +88,7 @@ def initialize():
             with open('./config/settings.json', 'r') as file:
                 settings_json = jload(file)
         except FileNotFoundError:
-            logging.warning("settings.json not found, creating new")
+            logging.info("settings.json not found, creating new")
             print("settings.json not found, restoring default")
             with open('./config/settings.json', 'w') as file:
                 with open("./default_config/settings.json", "r") as template:
@@ -96,9 +105,4 @@ def initialize():
                 with open('./config/settings.json', 'w') as f:
                     jdump(settings_json, f)
                 init_new_accounts()
-
-
-logging.basicConfig(filename='./logs/unbotter.log', level=logging.DEBUG,
-                    format='%(asctime)s |%(levelname)s| %(message)s')
-initialize()
-import wrapper
+    import wrapper

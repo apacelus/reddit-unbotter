@@ -1,7 +1,5 @@
 # Selenium for firefox
 import logging
-import random
-
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from selenium import webdriver
@@ -14,6 +12,7 @@ from json import load as json_load
 from random import uniform
 
 if __name__ == "selenium_wrapper.firefox":
+    base_xpath = "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div["
     with open('./config/settings.json', 'r') as file:
         settings_json = json_load(file)
     driver_options = webdriver.FirefoxOptions()
@@ -72,55 +71,91 @@ def login_account(session_cookie, username):
 
 
 def scroll_to_next_post(post_num):
-    while True:
-        driver.execute_script("return arguments[0].scrollIntoView();", driver.find_element(By.XPATH,
-                                                                                           '/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div[' + str(
-                                                                                               post_num) + ']'))
-        sleep(uniform(5, 8))
-        try:
-            if "promotedlink" in driver.find_element(By.XPATH,
-                                                     "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div[" + str(
-                                                         post_num) + "]/div/div").get_attribute("class"):
-                logging.info("Found ad post, skipping")
-                post_num += 1
-            else:
-                return post_num
-        except NoSuchElementException:
-            logging.warning("Found ad or broken post")
+    driver.execute_script("return arguments[0].scrollIntoView();",
+                          driver.find_element(By.XPATH, base_xpath + str(post_num) + ']'))
+    try:
+        if "promotedlink" in driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div").get_attribute(
+                "class"):
+            logging.info("Found ad post, skipping")
             post_num += 1
+            return scroll_to_next_post(post_num)
+        else:
+            return post_num
+    except NoSuchElementException:
+        logging.warning("Found broken post")
+        post_num += 1
+        return scroll_to_next_post(post_num)
 
 
 def upvote_post(post_num):
     try:
-        driver.find_element(By.XPATH,
-                            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div[" + str(
-                                post_num) + "]/div/div/div[2]/div/button[1]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[1]").click()
     except ElementClickInterceptedException:
         delete_top_bar()
-        driver.find_element(By.XPATH,
-                            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div[" + str(
-                                post_num) + "]/div/div/div[2]/div/button[1]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[1]").click()
+    except NoSuchElementException:
+        logging.warning("Couldnt find downvote button, trying alternate path")
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div/div/div[2]/div/button[1]").click()
+
+
+def enter_comments(post_num):
+    try:
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[3]/div[5]/div[2]/a").click()
+    except NoSuchElementException:
+        logging.warning("Couldnt find comment button, trying alternate path")
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div/div/div[3]/div[5]/div[2]/a").click()
+
+
+def scroll_comments(amount):
+    try:
+        for counter in range(amount):
+            driver.execute_script("return arguments[0].scrollIntoView();", driver.find_element(By.XPATH,
+                                                                                               '/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[5]/div/div/div/div[' + str(
+                                                                                                   counter) + ']'))
+            sleep(uniform(5, 10))
+    except NoSuchElementException:
+        logging.info("Couldnt find next comment, trying alt path")
+        try:
+            for counter in range(amount):
+                driver.execute_script("return arguments[0].scrollIntoView();", driver.find_element(By.XPATH,
+                                                                                                   '/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[6]/div/div/div/div[' + str(
+                                                                                                       counter) + ']'))
+                sleep(uniform(5, 10))
+        except NoSuchElementException:
+            logging.info("Couldnt find next comment, probably no more comments")
+            print("shite")
+        return
 
 
 def downvote_post(post_num):
     try:
-        driver.find_element(By.XPATH,
-                            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div[" + str(
-                                post_num) + "]/div/div/div[2]/div/button[2]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[2]").click()
     except ElementClickInterceptedException:
         delete_top_bar()
-        driver.find_element(By.XPATH,
-                            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div[" + str(
-                                post_num) + "]/div/div/div[2]/div/button[2]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[2]").click()
+    except NoSuchElementException:
+        logging.warning("Couldnt find downvote button, trying alternate path")
+        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div/div/div[2]/div/button[2]").click()
 
 
 # for testing:
 # get_session_cookie("test_acc_3432", "zj2asdasdjfU$MuHHQ")
 login_account("2034960186510%2C2022-07-13T17%3A41%3A31%2Ca6c0ae783e770c9d52fd96d38ccab6d7e4b9881f", "test_acc_3432")
-for i in range(1, 15):
-    while not scroll_to_next_post(i):
-        i += 1
-    if random.randint(0, 1) == 0:
-        upvote_post(i)
-    else:
-        downvote_post(i)
+# i = 1
+# while i < 10:
+#     print("At start: " + str(i))
+#     print("before scroll: " + str(i))
+#     i = scroll_to_next_post(i)
+#     print("after scroll: " + str(i))
+#     sleep(uniform(3, 7))
+#     if random.randint(0, 1) == 0:
+#         upvote_post(i)
+#     else:
+#         downvote_post(i)
+#     i += 1
+#     sleep(uniform(0.5, 2))
+#     print("At end: " + str(i))
+
+post_id = scroll_to_next_post(1)
+enter_comments(post_id)
+scroll_comments(10)

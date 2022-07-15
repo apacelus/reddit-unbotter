@@ -24,7 +24,7 @@ def vote_post(post_id, vote_type):
 
 
 if __name__ == "wrapper":
-    logging.basicConfig(filename='./logs/unbotter.log', level=logging.DEBUG,
+    logging.basicConfig(filename='./logs/unbotter.log', level=logging.INFO,
                         format='%(asctime)s |%(levelname)s| %(message)s')
     logging.info("\n\nNew log:")
     logging.info("Initializing")

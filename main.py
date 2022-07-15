@@ -52,7 +52,7 @@ if __name__ == "__main__":
     if not path.isdir("./logs"):
         logging.info("Creating log directory")
         mkdir("./logs")
-    logging.basicConfig(filename='./logs/unbotter.log', level=logging.DEBUG,
+    logging.basicConfig(filename='./logs/unbotter.log', level=logging.INFO,
                         format='%(asctime)s |%(levelname)s| %(message)s')
     if not path.isdir("./config"):
         logging.info("Creating config directory")

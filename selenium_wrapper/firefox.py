@@ -9,7 +9,7 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 from time import sleep
 from json import load as json_load
-from random import uniform
+from random import uniform, randint
 
 if __name__ == "selenium_wrapper.firefox":
     base_xpath = "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[5]/div["
@@ -18,8 +18,8 @@ if __name__ == "selenium_wrapper.firefox":
     driver_options = webdriver.FirefoxOptions()
     driver_options.binary_location = settings_json["browser_path"]
     driver_options.add_argument("--incognito")
-    driver = webdriver.Firefox(log_path="./logs/driver.log",
-                               service=FirefoxService(GeckoDriverManager().install()), options=driver_options)
+    driver = webdriver.Firefox(log_path="./logs/driver.log", service=FirefoxService(GeckoDriverManager().install()),
+                               options=driver_options)
     wait = WebDriverWait(driver, 10)
 
 
@@ -68,6 +68,13 @@ def login_account(session_cookie, username):
         logging.warning("Couldnt login as user: " + username)
         driver.delete_all_cookies()
         return False
+    # removing reddit popup
+    try:
+        driver.find_element(By.XPATH,
+                            "/html/body/div[1]/div/div[2]/div[2]/div/div/div/div[2]/div[2]/div[1]/div[1]/button").click()
+        logging.info("Removed reddit suggestion")
+    except NoSuchElementException:
+        pass
 
 
 def scroll_to_next_post(post_num):
@@ -107,24 +114,34 @@ def enter_comments(post_num):
 
 
 def scroll_comments(amount):
+    counter = 1
     try:
-        for counter in range(amount):
+        while counter <= amount:
+            print(
+                '/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[5]/div/div/div/div[' + str(
+                    counter) + ']')
             driver.execute_script("return arguments[0].scrollIntoView();", driver.find_element(By.XPATH,
                                                                                                '/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[5]/div/div/div/div[' + str(
                                                                                                    counter) + ']'))
-            sleep(uniform(5, 10))
+            counter += randint(1, 3)
+            sleep(uniform(2, 4))
     except NoSuchElementException:
-        logging.info("Couldnt find next comment, trying alt path")
+        logging.info("Couldnt find next comment, using alt path")
         try:
-            for counter in range(amount):
+            while counter <= amount:
+                print(
+                    '/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[6]/div/div/div/div[' + str(
+                        counter) + ']')
                 driver.execute_script("return arguments[0].scrollIntoView();", driver.find_element(By.XPATH,
                                                                                                    '/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[6]/div/div/div/div[' + str(
                                                                                                        counter) + ']'))
-                sleep(uniform(5, 10))
+                sleep(uniform(2, 4))
+                counter += randint(1, 3)
         except NoSuchElementException:
             logging.info("Couldnt find next comment, probably no more comments")
-            print("shite")
-        return
+            driver.execute_script("window.history.go(-1)")
+            sleep(2)
+            return counter
 
 
 def downvote_post(post_num):
@@ -136,6 +153,16 @@ def downvote_post(post_num):
     except NoSuchElementException:
         logging.warning("Couldnt find downvote button, trying alternate path")
         driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div/div/div[2]/div/button[2]").click()
+
+
+def write_comment(comment):
+    WebDriverWait(driver, 10).until(ec.element_to_be_clickable(
+        (By.XPATH,
+         "/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[3]/div[2]/div/div/div[2]/div/div[1]/div/div/div"))).send_keys(
+        comment)
+    driver.find_element(By.XPATH,
+                        "/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[3]/div[2]/div/div/div[3]/div[1]/button").click()
+    logging.info("Wrote comment: " + comment)
 
 
 # for testing:
@@ -155,7 +182,14 @@ login_account("2034960186510%2C2022-07-13T17%3A41%3A31%2Ca6c0ae783e770c9d52fd96d
 #     i += 1
 #     sleep(uniform(0.5, 2))
 #     print("At end: " + str(i))
-
-post_id = scroll_to_next_post(1)
+post_id = 1
+post_id = scroll_to_next_post(post_id)
 enter_comments(post_id)
-scroll_comments(10)
+write_comment("test")
+# sleep(2)
+# print(scroll_comments(10))
+# post_id += 3
+# post_id = scroll_to_next_post(post_id)
+# enter_comments(post_id)
+# sleep(2)
+# print(scroll_comments(10))

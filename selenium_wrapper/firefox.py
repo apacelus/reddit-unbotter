@@ -20,6 +20,7 @@ if __name__ == "selenium_wrapper.firefox":
     driver_options.add_argument("--incognito")
     driver = webdriver.Firefox(log_path="./logs/driver.log", service=FirefoxService(GeckoDriverManager().install()),
                                options=driver_options)
+    driver.minimize_window()
     wait = WebDriverWait(driver, 10)
 
 
@@ -33,6 +34,7 @@ def get_session_cookie(username, password):
     session_cookie = driver.get_cookie("reddit_session")["value"]
     logging.debug(driver.get_cookie("reddit_session"))
     driver.delete_all_cookies()
+    driver.refresh()
     return session_cookie
 
 
@@ -77,32 +79,43 @@ def login_account(session_cookie, username):
         pass
 
 
-def scroll_to_next_post(post_num):
+def scroll_to_next_post(post_id):
     driver.execute_script("return arguments[0].scrollIntoView();",
-                          driver.find_element(By.XPATH, base_xpath + str(post_num) + ']'))
+                          driver.find_element(By.XPATH, base_xpath + str(post_id) + ']'))
     try:
-        if "promotedlink" in driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div").get_attribute(
+        if "promotedlink" in driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div").get_attribute(
                 "class"):
             logging.info("Found ad post, skipping")
-            post_num += 1
-            return scroll_to_next_post(post_num)
+            post_id += 1
+            return scroll_to_next_post(post_id)
         else:
-            return post_num
+            return post_id
     except NoSuchElementException:
         logging.warning("Found broken post")
-        post_num += 1
-        return scroll_to_next_post(post_num)
+        post_id += 1
+        return scroll_to_next_post(post_id)
 
 
-def upvote_post(post_num):
+def upvote_post(post_id):
     try:
-        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[1]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div/div[2]/div/button[1]").click()
     except ElementClickInterceptedException:
         delete_top_bar()
-        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[1]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div/div[2]/div/button[1]").click()
     except NoSuchElementException:
         logging.warning("Couldnt find downvote button, trying alternate path")
-        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div/div/div[2]/div/button[1]").click()
+        driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div/div/div/div[2]/div/button[1]").click()
+
+
+def downvote_post(post_id):
+    try:
+        driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div/div[2]/div/button[2]").click()
+    except ElementClickInterceptedException:
+        delete_top_bar()
+        driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div/div[2]/div/button[2]").click()
+    except NoSuchElementException:
+        logging.warning("Couldnt find downvote button, trying alternate path")
+        driver.find_element(By.XPATH, base_xpath + str(post_id) + "]/div/div/div/div/div[2]/div/button[2]").click()
 
 
 def enter_comments(post_num):
@@ -144,17 +157,6 @@ def scroll_comments(amount):
             return counter
 
 
-def downvote_post(post_num):
-    try:
-        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[2]").click()
-    except ElementClickInterceptedException:
-        delete_top_bar()
-        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div[2]/div/button[2]").click()
-    except NoSuchElementException:
-        logging.warning("Couldnt find downvote button, trying alternate path")
-        driver.find_element(By.XPATH, base_xpath + str(post_num) + "]/div/div/div/div/div[2]/div/button[2]").click()
-
-
 def write_comment(comment):
     WebDriverWait(driver, 10).until(ec.element_to_be_clickable(
         (By.XPATH,
@@ -162,34 +164,3 @@ def write_comment(comment):
         comment)
     driver.find_element(By.XPATH,
                         "/html/body/div[1]/div/div[2]/div[3]/div/div/div/div[2]/div[1]/div[3]/div[3]/div[2]/div/div/div[3]/div[1]/button").click()
-    logging.info("Wrote comment: " + comment)
-
-
-# for testing:
-# get_session_cookie("test_acc_3432", "zj2asdasdjfU$MuHHQ")
-login_account("2034960186510%2C2022-07-13T17%3A41%3A31%2Ca6c0ae783e770c9d52fd96d38ccab6d7e4b9881f", "test_acc_3432")
-# i = 1
-# while i < 10:
-#     print("At start: " + str(i))
-#     print("before scroll: " + str(i))
-#     i = scroll_to_next_post(i)
-#     print("after scroll: " + str(i))
-#     sleep(uniform(3, 7))
-#     if random.randint(0, 1) == 0:
-#         upvote_post(i)
-#     else:
-#         downvote_post(i)
-#     i += 1
-#     sleep(uniform(0.5, 2))
-#     print("At end: " + str(i))
-post_id = 1
-post_id = scroll_to_next_post(post_id)
-enter_comments(post_id)
-write_comment("test")
-# sleep(2)
-# print(scroll_comments(10))
-# post_id += 3
-# post_id = scroll_to_next_post(post_id)
-# enter_comments(post_id)
-# sleep(2)
-# print(scroll_comments(10))

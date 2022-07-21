@@ -11,16 +11,67 @@ def get_session_cookie(username, password):
     return selenium_wrapper.get_session_cookie(username, password)
 
 
-def view_post(post_id):
-    pass
+def scroll_to_next_post(post_id):
+    return selenium_wrapper.scroll_to_next_post(post_id)
 
 
 def join_subreddit(subreddit_id):
     pass
 
 
-def vote_post(post_id, vote_type):
-    pass
+# vote true = up, vote false = down
+def vote_post(post_id, vote):
+    if vote:
+        return selenium_wrapper.upvote_post(post_id)
+    else:
+        return selenium_wrapper.downvote_post(post_id)
+
+
+def enter_comments(post_id):
+    logging.info("Entering comments of post: " + post_id)
+    return selenium_wrapper.enter_comments(post_id)
+
+
+def leave_comment(comment_text):
+    logging.info("Writing comment: " + comment_text)
+    return selenium_wrapper.write_comment(comment_text)
+
+
+# the main main methode
+def main():
+    logging.info("Starting main loop")
+    # for testing:
+    with open('./config/data.json', 'r') as file:
+        data = jload(file)
+    selenium_wrapper.login_account(data["test_acc_3432"]["session_cookie"], "test_acc_3432")
+
+    # i = 1
+    # while i < 10:
+    #     print("At start: " + str(i))
+    #     print("before scroll: " + str(i))
+    #     i = scroll_to_next_post(i)
+    #     print("after scroll: " + str(i))
+    #     sleep(uniform(3, 7))
+    #     if random.randint(0, 1) == 0:
+    #         upvote_post(i)
+    #     else:
+    #         downvote_post(i)
+    #     i += 1
+    #     sleep(uniform(0.5, 2))
+    #     print("At end: " + str(i))
+
+    # post_id = 1
+    # post_id = selenium_wrapper.scroll_to_next_post(post_id)
+    # selenium_wrapper.enter_comments(post_id)
+    # selenium_wrapper.write_comment("lol")
+
+    # sleep(2)
+    # print(scroll_comments(10))
+    # post_id += 3
+    # post_id = scroll_to_next_post(post_id)
+    # enter_comments(post_id)
+    # sleep(2)
+    # print(scroll_comments(10))
 
 
 if __name__ == "wrapper":
